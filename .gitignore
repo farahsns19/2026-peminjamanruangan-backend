@@ -1,0 +1,16 @@
+# ASP.NET Core
+bin/
+obj/
+
+# Environment
+.env
+
+# Database
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
