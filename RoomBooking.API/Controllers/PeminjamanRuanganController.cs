@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore; // supaya bisa query db
 using RoomBooking.API.Data; // akses AppDbContext
 using RoomBooking.API.Models; // akses entity PeminjamanRuangan
 using System.ComponentModel.DataAnnotations;
+using System.Linq; // karena pakai .Where()
 
 namespace RoomBooking.API.Controllers
 {
@@ -12,16 +13,65 @@ namespace RoomBooking.API.Controllers
     {
         private readonly AppDbContext _db; // Akses db
 
-        public PeminjamanRuanganController(AppDbContext context){
+        public PeminjamanRuanganController(AppDbContext context)
+        {
             // Construktor yang dipanggil (otomatis) saat controller dibuat
             _db = context;
         }
+
         // Melihat semua data peminjaman
         // GET: api/PeminjamanRuangan
         [HttpGet]
-        public async Task<IActionResult> LihatSemua(){
+        public async Task<IActionResult> LihatSemua()
+        {
             var daftarPeminjaman = await _db.PeminjamanRuangan.ToListAsync();
             return Ok(daftarPeminjaman);
+        }
+
+        // TASK A: Melihat Riwayat Peminjaman
+        // GET: api/PeminjamanRuangan/riwayat
+        [HttpGet("riwayat")]
+        public async Task<IActionResult> LihatRiwayat()
+        {
+            var riwayat = await _db.PeminjamanRuangan
+                .Where(x => x.Status != "Menunggu") // mengambil semua peminjaman yang statusnya bukan menunggu
+                .ToListAsync();
+
+            return Ok(riwayat);
+        }
+
+        // TASK B: Search / Filter Peminjaman
+        // GET: api/PeminjamanRuangan/search?nama=&ruangan=&status=\
+        [HttpGet("search")]
+        public async Task<IActionResult> CariData(
+            string? nama,
+            string? ruangan,
+            string? status
+        )
+        {
+            var query = _db.PeminjamanRuangan.AsQueryable();
+
+            // Filter berdasarkan nama peminjam
+            if (!string.IsNullOrEmpty(nama))
+            {
+                query = query.Where(x => x.NamaPeminjam.Contains(nama));
+            }
+
+            // Filter berdasarkan ruangan
+            if (!string.IsNullOrEmpty(ruangan))
+            {
+                query = query.Where(x => x.Ruangan.Contains(ruangan));
+            }
+
+            // Filter berdasarkan status
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(x => x.Status.Contains(status));
+            }
+
+            var hasil = await query.ToListAsync();
+
+            return Ok(hasil);
         }
 
         // Melihat detail data berdasarkan ID
@@ -39,7 +89,6 @@ namespace RoomBooking.API.Controllers
 
         // Menambah data peminjaman baru
         // POST: api/PeminjamanRuangan
-
         [HttpPost]
         public async Task<IActionResult> TambahData(PeminjamanRuangan peminjamanBaru)
         {
